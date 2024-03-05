@@ -18,10 +18,20 @@
 
         .question-container {
             margin-bottom: 20px;
+            border: 1px solid #bdbdbd;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .nested-question-container {
+            margin-left: 20px;
+            border: 1px solid #e0e0e0;
+            padding: 10px;
+            border-radius: 4px;
         }
 
         textarea {
-            width: 100%;
+            width: calc(100% - 22px);
             padding: 10px;
             border-radius: 4px;
             border: 1px solid #bdbdbd;
@@ -30,7 +40,7 @@
         }
 
         input[type="text"] {
-            width: 100%;
+            width: calc(100% - 22px);
             padding: 10px;
             border-radius: 4px;
             border: 1px solid #bdbdbd;
@@ -57,6 +67,7 @@
             padding: 10px;
             border-radius: 4px;
             background-color: #ffffff;
+            margin-top: 20px;
         }
     </style>
 </head>
@@ -93,14 +104,43 @@
             questionTextarea.placeholder = 'Enter main question...';
             questionContainer.appendChild(questionTextarea);
 
-            // Create input field for answer choice
+            // Create an input field for the answer choice
             const answerInput = document.createElement('input');
             answerInput.type = 'text';
             answerInput.placeholder = 'Enter answer choice...';
             questionContainer.appendChild(answerInput);
 
+            // Create a button to add nested question
+            const addNestedButton = document.createElement('button');
+            addNestedButton.textContent = 'Add Nested Question';
+            addNestedButton.onclick = function() {
+                addNestedQuestion(questionContainer);
+            };
+            questionContainer.appendChild(addNestedButton);
+
             // Append the question container to the builder
             builder.appendChild(questionContainer);
+        }
+
+        // Function to add a nested question
+        function addNestedQuestion(parentQuestion) {
+            // Create a new nested question container
+            const nestedQuestionContainer = document.createElement('div');
+            nestedQuestionContainer.classList.add('nested-question-container');
+
+            // Create a textarea for the nested question
+            const nestedQuestionTextarea = document.createElement('textarea');
+            nestedQuestionTextarea.placeholder = 'Enter nested question...';
+            nestedQuestionContainer.appendChild(nestedQuestionTextarea);
+
+            // Create an input field for the nested answer choice
+            const nestedAnswerInput = document.createElement('input');
+            nestedAnswerInput.type = 'text';
+            nestedAnswerInput.placeholder = 'Enter nested answer choice...';
+            nestedQuestionContainer.appendChild(nestedAnswerInput);
+
+            // Append the nested question container to the parent question
+            parentQuestion.appendChild(nestedQuestionContainer);
         }
 
         // Function to generate the code
@@ -126,6 +166,23 @@
 
                 // Add the answer choice text to the code
                 code += `\tAnswer: ${answerText}\n`;
+
+                // Get the nested questions
+                const nestedQuestions = questionContainer.querySelectorAll('.nested-question-container');
+                nestedQuestions.forEach((nestedQuestion, nestedIndex) => {
+                    // Get the nested question text
+                    const nestedQuestionText = nestedQuestion.querySelector('textarea').value;
+
+                    // Add the nested question text to the code
+                    code += `\t\tNested Question ${nestedIndex + 1}: ${nestedQuestionText}\n`;
+
+                    // Get the nested answer choice
+                    const nestedAnswerInput = nestedQuestion.querySelector('input[type="text"]');
+                    const nestedAnswerText = nestedAnswerInput.value;
+
+                    // Add the nested answer choice text to the code
+                    code += `\t\t\tAnswer: ${nestedAnswerText}\n`;
+                });
             });
 
             // Display the generated code
