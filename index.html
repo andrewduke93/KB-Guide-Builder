@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+\<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Decision Tree Builder</title>
+    <title>Interactive Decision Tree Builder v1</title>
     <style>
         body {
             font-family: 'Roboto', sans-serif;
@@ -68,12 +68,19 @@
         .fade-in.active {
             opacity: 1;
         }
+        .instructions {
+            color: #757575;
+            font-size: 12px;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
 
 <h2>Interactive Decision Tree Builder</h2>
-<div id="builder" class="container" contenteditable="true"></div>
+<div id="builder" class="container" contenteditable="true">
+    <div class="instructions">Click "Add Main Question" to start building your decision tree.</div>
+</div>
 <div class="action-buttons">
     <button onclick="addQuestion('builder', 0, '')">Add Main Question</button>
     <button onclick="generateCode()">Generate Code</button>
@@ -135,13 +142,18 @@ function addAnswer(questionId, level, path) {
 
 function generateCode() {
     const builder = document.getElementById('builder').cloneNode(true);
-    Array.from(builder.querySelectorAll('.answer')).forEach(answer => {
+    const output = document.createElement('div');
+    output.className = 'container';
+    output.innerHTML = builder.innerHTML;
+    Array.from(output.querySelectorAll('.answer')).forEach(answer => {
         const label = answer.querySelector('label');
-        answer.parentNode.replaceChild(label, answer);
+        const radioBtn = answer.querySelector('input[type="radio"]');
+        answer.innerHTML = '';
+        answer.appendChild(radioBtn);
+        answer.appendChild(label);
     });
-    const htmlCode = builder.innerHTML;
-    document.getElementById('output').value = htmlCode;
-    document.getElementById('previewArea').innerHTML = htmlCode;
+    document.getElementById('output').value = output.innerHTML;
+    document.getElementById('previewArea').innerHTML = output.innerHTML;
     togglePreview(true);
 }
 
