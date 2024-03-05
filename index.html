@@ -40,6 +40,10 @@
         .answer-container {
             margin-left: 20px;
         }
+
+        .nested-container {
+            margin-left: 40px;
+        }
     </style>
 </head>
 <body>
@@ -90,8 +94,41 @@
             newAnswerInput.type = 'text';
             newAnswerInput.placeholder = 'Enter answer choice';
 
-            // Append the new answer input to the answer container
+            // Create a button to add nested choices
+            const addNestedButton = document.createElement('button');
+            addNestedButton.textContent = 'Add Nested Choice';
+            addNestedButton.onclick = function() {
+                addNestedChoice(questionContainer, newAnswerInput);
+            };
+
+            // Append the new answer input and add nested button to the answer container
             questionContainer.querySelector('.answer-container').appendChild(newAnswerInput);
+            questionContainer.querySelector('.answer-container').appendChild(addNestedButton);
+        }
+
+        function addNestedChoice(questionContainer, answerInput) {
+            // Create a new nested choice input
+            const newNestedInput = document.createElement('input');
+            newNestedInput.type = 'text';
+            newNestedInput.placeholder = 'Enter nested choice';
+
+            // Create a button to add more nested choices
+            const addMoreNestedButton = document.createElement('button');
+            addMoreNestedButton.textContent = 'Add More Nested Choices';
+            addMoreNestedButton.onclick = function() {
+                addNestedChoice(questionContainer, answerInput);
+            };
+
+            // Create a container for nested choices
+            const nestedContainer = document.createElement('div');
+            nestedContainer.className = 'nested-container';
+
+            // Append the new nested input and add more nested button to the nested container
+            nestedContainer.appendChild(newNestedInput);
+            nestedContainer.appendChild(addMoreNestedButton);
+
+            // Append the nested container to the answer container
+            answerInput.parentNode.appendChild(nestedContainer);
         }
     </script>
 </body>
