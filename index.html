@@ -82,7 +82,7 @@ function addQuestion(parentId, level, path) {
     container.className = level === 0 ? 'container' : 'nested-container';
     container.id = questionId;
     container.innerHTML = `
-        <label>Question ${path}${questionCounter}</label>
+        <textarea placeholder="Question ${path}${questionCounter}"></textarea>
         <div class="answers" id="answers-${questionId}"></div>
     `;
     document.getElementById(parentId).appendChild(container);
@@ -105,7 +105,9 @@ function addAnswer(questionId, level, path) {
     const answerPath = `${path}${questionCounter}.`;
     answerContainer.innerHTML = `
         <input type="radio" name="${questionId}" value="${answerId}">
-        <label for="${answerId}">Answer ${answerPath}</label>
+        <label for="${answerId}">
+            ${document.getElementById(questionId).querySelector('textarea').value} ${answerPath}
+        </label>
         <div class="nested-questions hidden" id="nested-${answerId}"></div>
     `;
     answersContainer.appendChild(answerContainer);
