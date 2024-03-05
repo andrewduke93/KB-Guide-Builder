@@ -5,69 +5,73 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Decision Tree Builder</title>
     <style>
+        /* Add your CSS styles here */
         body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #fafafa;
-            color: #212121;
-            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
         }
 
         h2 {
+            margin: 20px 0;
+        }
+
+        #builder {
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
         }
 
         .question-container {
             margin-bottom: 20px;
-            border: 1px solid #bdbdbd;
+            border: 1px solid #e0e0e0;
             padding: 10px;
-            border-radius: 4px;
+            border-radius: 5px;
+            background-color: #f5f5f5;
         }
 
         .nested-question-container {
             margin-left: 20px;
             border: 1px solid #e0e0e0;
             padding: 10px;
-            border-radius: 4px;
+            border-radius: 5px;
+            background-color: #fcfcfc;
         }
 
-        textarea {
-            width: calc(100% - 22px);
+        textarea, input[type="text"] {
+            width: calc(100% - 22px); /* Adjusted width to accommodate the borders */
             padding: 10px;
+            border: 1px solid #ccc;
             border-radius: 4px;
-            border: 1px solid #bdbdbd;
+            margin-bottom: 10px;
             resize: vertical;
-            margin-bottom: 10px;
-        }
-
-        input[type="text"] {
-            width: calc(100% - 22px);
-            padding: 10px;
-            border-radius: 4px;
-            border: 1px solid #bdbdbd;
-            margin-bottom: 10px;
         }
 
         button {
-            background-color: #6200ee;
+            background-color: #007bff;
             color: #ffffff;
             border: none;
-            padding: 8px 16px;
+            padding: 10px 20px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 16px;
             margin-right: 10px;
+            transition: background-color 0.3s ease;
         }
 
         button:hover {
-            background-color: #7b1fa2;
+            background-color: #0056b3;
         }
 
         #code {
-            border: 1px solid #bdbdbd;
-            padding: 10px;
-            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+            border-radius: 5px;
             background-color: #ffffff;
-            margin-top: 20px;
+            margin-bottom: 20px; /* Added margin for better separation */
         }
     </style>
 </head>
@@ -83,6 +87,9 @@
     <!-- Action buttons -->
     <div id="actions">
         <button onclick="addMainQuestion()">Add Main Question</button>
+        <button onclick="resetBuilder()">Reset</button>
+        <button onclick="undoAction()">Undo</button>
+        <button onclick="preview()">Preview</button>
         <button onclick="generateCode()">Generate Code</button>
     </div>
 
@@ -90,6 +97,9 @@
     <div id="code"></div>
 
     <script>
+        // Stack to keep track of actions for undo functionality
+        let actionStack = [];
+
         // Function to add a main question
         function addMainQuestion() {
             // Get the builder container
@@ -120,6 +130,9 @@
 
             // Append the question container to the builder
             builder.appendChild(questionContainer);
+
+            // Push the action to the stack for undo functionality
+            actionStack.push({ action: 'addMainQuestion', element: questionContainer });
         }
 
         // Function to add a nested question
@@ -141,12 +154,38 @@
 
             // Append the nested question container to the parent question
             parentQuestion.appendChild(nestedQuestionContainer);
+
+            // Push the action to the stack for undo functionality
+            actionStack.push({ action: 'addNestedQuestion', element: nestedQuestionContainer });
+        }
+
+        // Function to reset the builder
+        function resetBuilder() {
+            const builder = document.getElementById('builder');
+            builder.innerHTML = '';
+            actionStack = [];
+            document.getElementById('code').innerHTML = '';
+            document.getElementById('instructions').textContent = 'Click "Add Main Question" to start building your decision tree.';
+        }
+
+        // Function to undo the last action
+        function undoAction() {
+            if (actionStack.length > 0) {
+                const lastAction = actionStack.pop();
+                lastAction.element.remove();
+            }
         }
 
         // Function to generate the code
         function generateCode() {
             // Get the builder container
             const builder = document.getElementById('builder');
+
+            // Check if there are no questions
+            if (builder.children.length === 0) {
+                alert('Please add at least one question.');
+                return;
+            }
 
             // Initialize code string
             let code = '';
@@ -158,14 +197,14 @@
                 const questionText = questionContainer.querySelector('textarea').value;
 
                 // Add the question text to the code
-                code += `Question ${index + 1}: ${questionText}\n`;
+                code += `<p>${questionText}</p>\n`;
 
                 // Get the answer choice
                 const answerInput = questionContainer.querySelector('input[type="text"]');
                 const answerText = answerInput.value;
 
-                // Add the answer choice text to the code
-                code += `\tAnswer: ${answerText}\n`;
+                // Add the radio button for the answer choice to the code
+                code += `<input type="radio" name="question-${index}" value="${answerText}"> ${answerText}<br>\n`;
 
                 // Get the nested questions
                 const nestedQuestions = questionContainer.querySelectorAll('.nested-question-container');
@@ -174,20 +213,40 @@
                     const nestedQuestionText = nestedQuestion.querySelector('textarea').value;
 
                     // Add the nested question text to the code
-                    code += `\t\tNested Question ${nestedIndex + 1}: ${nestedQuestionText}\n`;
+                    code += `<p style="margin-left: 20px;">${nestedQuestionText}</p>\n`;
 
                     // Get the nested answer choice
                     const nestedAnswerInput = nestedQuestion.querySelector('input[type="text"]');
                     const nestedAnswerText = nestedAnswerInput.value;
 
-                    // Add the nested answer choice text to the code
-                    code += `\t\t\tAnswer: ${nestedAnswerText}\n`;
+                    // Add the radio button for the nested answer choice to the code
+                    code += `<input type="radio" name="question-${index}-${nestedIndex}" value="${nestedAnswerText}"> ${nestedAnswerText}<br>\n`;
                 });
             });
 
             // Display the generated code
             const codeDisplay = document.getElementById('code');
-            codeDisplay.textContent = code;
+            codeDisplay.innerHTML = code;
+        }
+
+        // Function to preview the decision tree
+        function preview() {
+            const previewWindow = window.open('', 'Decision Tree Preview', 'width=600,height=400,scrollbars=yes,resizable=yes');
+            const builderContent = document.getElementById('builder').innerHTML;
+            previewWindow.document.write(`
+                <html>
+                <head>
+                    <title>Decision Tree Preview</title>
+                    <style>
+                        /* Add your CSS styles here */
+                    </style>
+                </head>
+                <body>
+                    <h2>Decision Tree Preview</h2>
+                    ${builderContent}
+                </body>
+                </html>
+            `);
         }
     </script>
 </body>
