@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Decision Tree Builder</title>
+</head>
+<body>
+
+<div id="builder"></div>
+<button onclick="addQuestion('builder', '')">Add Main Question</button>
+<button onclick="generateCode()">Finish & Generate Outline</button>
+<textarea id="codeOutput" placeholder="Generated outline will appear here..."></textarea>
+
+<script>
+let idCounter = 0;
+
+function addQuestion(parentId, prefix) {
+    const container = document.createElement('div');
+    const questionId = `q${prefix}${++idCounter}`;
+    container.innerHTML = `
+        <input type="text" id="${questionId}" placeholder="Enter your question here...">
+        <div id="answers${questionId}"></div>
+        <button onclick="addAnswer('${questionId}')">Add Answer</button>
+    `;
+    document.getElementById(parentId).appendChild(container);
+}
+
+function addAnswer(questionId) {
+    const answerContainer = document.getElementById(`answers${questionId}`);
+    const answerId = `${questionId}a${++idCounter}`;
+    const answerDiv = document.createElement('div');
+    answerDiv.innerHTML = `
+        <input type="text" id="${answerId}" placeholder="Enter answer...">
+        <button onclick="addQuestion('answers${questionId}', '${answerId}')">Add Nested Question</button>
+    `;
+    answerContainer.appendChild(answerDiv);
+}
+
+function generateCode() {
+    const output = document.getElementById('codeOutput');
+    output.value = ''; // Clear previous output
+    generateCodeFromElement(document.getElementById('builder'), '', 0);
+}
+
+function generateCodeFromElement(element, prefix, level) {
+    if (!element) return;
+    Array.from(element.children).forEach(child => {
+        if (child.tagName === 'INPUT' && child.type === 'text') {
+            const indentation = ' '.repeat(level * 2); // Indent based on nesting level
+            const output = document.getElementById('codeOutput');
+            output.value += `${indentation}${prefix} ${child.value}\n`;
+        }
+        generateCodeFromElement(child, prefix, level + (child.tagName === 'DIV' ? 1 : 0));
+    });
+}
+</script>
+
+</body>
+</html>
