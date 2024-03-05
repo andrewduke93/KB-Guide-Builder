@@ -2,91 +2,112 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Multi-level Nested Decision Tree Builder</title>
+    <title>Complete Interactive Decision Tree Builder</title>
     <style>
-        /* Styles remain mostly unchanged, ensure .nested-question has proper styling */
-        .nested-question {
-            margin-left: 20px;
-            display: none; /* Initially hide nested questions */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #FAFAFA;
+            color: #212121;
+            padding: 20px;
         }
-        /* Other styles are as previously defined */
+        .question-block {
+            background-color: #FFFFFF;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 4px;
+            padding: 20px;
+            margin-bottom: 10px;
+        }
+        button, .answer-btn {
+            background-color: #6200EE;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+        button:hover, .answer-btn:hover {
+            background-color: #7B1FA2;
+        }
+        textarea {
+            width: calc(100% - 24px);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #E0E0E0;
+            resize: vertical;
+        }
+        #output, #previewArea {
+            width: 100%;
+            margin-top: 20px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 4px;
+            padding: 10px;
+            resize: vertical;
+            height: 150px;
+            display: none;
+        }
     </style>
 </head>
 <body>
 
-<div id="builder" class="question-container"></div>
-<button onclick="addQuestion('builder', '', true, 0)">Add Main Question</button>
-<textarea id="output" placeholder="Generated HTML code will appear here..."></textarea>
+<div id="builder"></div>
+<button onclick="addQuestion()">Add Main Question</button>
+<textarea id="output" readonly></textarea>
 <button onclick="generateCode()">Generate HTML Code</button>
 <button onclick="togglePreview()">Toggle Preview</button>
-<div id="previewArea" style="display: none;"></div>
+<div id="previewArea"></div>
 
 <script>
-let questionCounter = 1;
+let questionCounter = 0;
 
-function addQuestion(parentId, precedingQuestionId, isMainQuestion = false, level) {
-    const questionId = `q${questionCounter++}`;
-    const container = document.createElement('div');
-    container.className = isMainQuestion ? 'question-block' : 'nested-question';
-    container.innerHTML = `
-        <textarea placeholder="${isMainQuestion ? 'Enter main question' : 'Enter nested question'}"></textarea>
-        <div class="answers"></div>
-        ${level < 10 ? `<button onclick="addAnswer('${questionId}', ${level + 1})">Add Answer</button>` : ''}
+function addQuestion() {
+    questionCounter++;
+    const div = document.createElement('div');
+    div.className = 'question-block';
+    div.innerHTML = `
+        <textarea placeholder="Question ${questionCounter}"></textarea>
+        <button class="answer-btn" onclick="addAnswer(this)">Add Answer</button>
     `;
-    
-    if (!isMainQuestion) {
-        const nestedContainer = document.createElement('div');
-        nestedContainer.className = 'nested-questions';
-        nestedContainer.appendChild(container);
-        document.getElementById(precedingQuestionId).querySelector('.answers').appendChild(nestedContainer);
-    } else {
-        document.getElementById(parentId).appendChild(container);
-    }
+    document.getElementById('builder').appendChild(div);
 }
 
-function addAnswer(questionId, level) {
-    const answerContainer = document.createElement('div');
-    answerContainer.className = 'answer-input';
-    answerContainer.innerHTML = `
-        <textarea placeholder="Enter answer"></textarea>
-        ${level < 10 ? `<button onclick="addQuestion('builder', '${questionId}', false, ${level})">Add Nested Question</button>` : ''}
-    `;
-    document.getElementById(questionId).querySelector('.answers').appendChild(answerContainer);
+function addAnswer(button) {
+    const div = document.createElement('div');
+    div.innerHTML = `<textarea placeholder="Answer"></textarea>`;
+    button.before(div);
 }
 
 function generateCode() {
-    const output = document.getElementById('output');
-    output.value = "<script>function toggleNestedQuestion(id) { document.querySelectorAll('.nested-question').forEach(q => { q.style.display = 'none'; }); document.getElementById(id) ? document.getElementById(id).style.display = 'block' : null; }</script>";
-    traverseQuestions(document.getElementById('builder'), output, 0);
-}
+    const questions = document.querySelectorAll('.question-block');
+    let html = '';
 
-function traverseQuestions(element, output, level) {
-    element.childNodes.forEach((child) => {
-        if (child.className && child.className.includes('question-block')) {
-            const questionText = child.querySelector('textarea').value;
-            const questionId = `q${level}-${questionCounter++}`;
-            output.value += `<div class="${level === 0 ? '' : 'nested-question'}" id="${questionId}">\n<p>${questionText}</p>\n`;
-            const answers = child.querySelectorAll('.answer-input textarea');
-            answers.forEach((answer, index) => {
-                const answerText = answer.value;
-                const nestedQuestionId = `nested-${questionId}-${index}`;
-                output.value += `<input type="radio" name="${questionId}" onclick="toggleNestedQuestion('${nestedQuestionId}')">${answerText}<br>\n`;
-                const nextLevel = child.querySelector('.nested-questions');
-                if (nextLevel) {
-                    traverseQuestions(nextLevel, output, level + 1);
-                }
-            });
-            output.value += `</div>\n`;
-        }
+    questions.forEach((q, index) => {
+        const questionText = q.querySelector('textarea').value;
+        const answers = q.querySelectorAll('div > textarea');
+        let answersHtml = '';
+
+        answers.forEach((a, aIndex) => {
+            const answerText = a.value;
+            answersHtml += `<label><input type="radio" name="q${index}" onclick="document.getElementById('q${index}-a${aIndex}').style.display='block';">${answerText}</label><div id="q${index}-a${aIndex}" style="display:none;">Nested content for ${answerText}</div><br>`;
+        });
+
+        html += `<div><p>${questionText}</p>${answersHtml}</div>`;
     });
+
+    document.getElementById('output').value = html;
+    document.getElementById('previewArea').innerHTML = html;
 }
 
 function togglePreview() {
     const previewArea = document.getElementById('previewArea');
-    const htmlCode = document.getElementById('output').value;
-    previewArea.innerHTML = htmlCode;
-    previewArea.querySelector('script') && eval(previewArea.querySelector('script').textContent);
+    const outputArea = document.getElementById('output');
     previewArea.style.display = previewArea.style.display === 'none' ? 'block' : 'none';
+    outputArea.style.display = outputArea.style.display === 'none' ? 'block' : 'none';
 }
 </script>
 
