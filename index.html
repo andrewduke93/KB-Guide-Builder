@@ -43,7 +43,7 @@
             resize: vertical;
         }
         #output, #previewArea {
-            display: none; /* Initially hidden */
+            display: none;
             width: 100%;
             background-color: #FFFFFF;
             border: 1px solid #BDBDBD;
@@ -53,6 +53,9 @@
             border-radius: 4px;
             resize: vertical;
             overflow: auto;
+        }
+        .hidden {
+            display: none;
         }
     </style>
 </head>
@@ -100,13 +103,19 @@ function addAnswer(questionId, level, path) {
     const answerContainer = document.createElement('div');
     answerContainer.className = 'answer';
     const answerPath = `${path}${questionCounter}.`;
-    answerContainer.innerHTML = `<textarea placeholder="Answer ${answerPath}"></textarea>`;
+    answerContainer.innerHTML = `
+        <input type="radio" name="${questionId}" value="${answerId}">
+        <label for="${answerId}">
+            <textarea placeholder="Answer ${answerPath}"></textarea>
+        </label>
+        <div class="nested-questions hidden" id="nested-${answerId}"></div>
+    `;
     answersContainer.appendChild(answerContainer);
 
     if (level < 4) {
         const addNestedQuestionBtn = document.createElement('button');
         addNestedQuestionBtn.textContent = 'Add Nested Question';
-        addNestedQuestionBtn.onclick = () => addQuestion(`answers-${questionId}`, level + 1, `${answerPath}`);
+        addNestedQuestionBtn.onclick = () => addQuestion(`nested-${answerId}`, level + 1, `${answerPath}`);
         answerContainer.appendChild(addNestedQuestionBtn);
     }
 
@@ -116,15 +125,19 @@ function addAnswer(questionId, level, path) {
 function generateCode() {
     const builder = document.getElementById('builder').cloneNode(true);
     Array.from(builder.querySelectorAll('button')).forEach(btn => btn.remove());
-    Array.from(builder.querySelectorAll('textarea')).forEach((textarea, index) => {
-        const text = document.createTextNode(textarea.value);
-        textarea.parentNode.replaceChild(text, textarea);
+    Array.from(builder.querySelectorAll('textarea')).forEach(textarea => {
+        const label = document.createElement('label');
+        const input = document.createElement('input');
+        input.type = 'radio';
+        input.name = textarea.parentNode.id;
+        input.value = textarea.previousElementSibling.htmlFor.split('a')[1];
+        label.appendChild(input);
+        label.appendChild(document.createTextNode(textarea.value));
+        textarea.parentNode.replaceWith(label);
     });
     const htmlCode = builder.innerHTML;
-    // Modify the HTML code to include radio buttons and hidden content
-    const modifiedCode = htmlCode.replace(/<textarea/g, '<input type="radio"').replace(/<\/textarea/g, '</label><div style="display: none">').replace(/<div style="display: none">/g, '<div style="display: none">');
-    document.getElementById('output').value = modifiedCode;
-    document.getElementById('previewArea').innerHTML = modifiedCode;
+    document.getElementById('output').value = htmlCode;
+    document.getElementById('previewArea').innerHTML = htmlCode;
     togglePreview(true);
 }
 
