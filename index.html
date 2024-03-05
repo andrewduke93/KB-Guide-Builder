@@ -82,7 +82,7 @@ function addQuestion(parentId, level, path) {
     container.className = level === 0 ? 'container' : 'nested-container';
     container.id = questionId;
     container.innerHTML = `
-        <textarea placeholder="Question ${path}${questionCounter}"></textarea>
+        <label>Question ${path}${questionCounter}</label>
         <div class="answers" id="answers-${questionId}"></div>
     `;
     document.getElementById(parentId).appendChild(container);
@@ -104,7 +104,8 @@ function addAnswer(questionId, level, path) {
     answerContainer.className = 'answer';
     const answerPath = `${path}${questionCounter}.`;
     answerContainer.innerHTML = `
-        <textarea placeholder="Answer ${answerPath}"></textarea>
+        <input type="radio" name="${questionId}" value="${answerId}">
+        <label for="${answerId}">Answer ${answerPath}</label>
         <div class="nested-questions hidden" id="nested-${answerId}"></div>
     `;
     answersContainer.appendChild(answerContainer);
@@ -122,12 +123,7 @@ function addAnswer(questionId, level, path) {
 function generateCode() {
     const builder = document.getElementById('builder').cloneNode(true);
     Array.from(builder.querySelectorAll('.answer')).forEach(answer => {
-        const input = document.createElement('input');
-        input.type = 'radio';
-        input.name = answer.parentNode.id;
-        const label = document.createElement('label');
-        label.appendChild(input);
-        label.appendChild(document.createTextNode(answer.querySelector('textarea').value));
+        const label = answer.querySelector('label');
         answer.parentNode.replaceChild(label, answer);
     });
     const htmlCode = builder.innerHTML;
