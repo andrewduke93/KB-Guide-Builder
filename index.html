@@ -2,37 +2,33 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Dynamic Decision Tree Builder with Preview</title>
+    <title>Interactive Decision Tree Builder</title>
     <style>
         body {
             font-family: 'Roboto', sans-serif;
             background-color: #FAFAFA;
-            color: #212121;
             padding: 20px;
         }
-        .title {
-            text-align: center;
+        .container, .nested-container {
             margin-bottom: 20px;
-            font-size: 24px;
-            color: #6200EE;
-        }
-        .question-block, .nested-question {
-            background-color: #FFFFFF;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            border-radius: 4px;
             padding: 15px;
-            margin-bottom: 10px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .nested-container {
             margin-left: 20px;
+            background-color: #f9f9f9;
         }
         button {
             background-color: #6200EE;
-            color: white;
+            color: #FFFFFF;
             border: none;
-            padding: 8px 16px;
             border-radius: 4px;
+            padding: 10px;
             cursor: pointer;
-            font-size: 14px;
             margin-top: 10px;
+            display: inline-block;
         }
         button:hover {
             background-color: #7B1FA2;
@@ -40,81 +36,110 @@
         textarea {
             width: 100%;
             padding: 10px;
-            margin: 10px 0;
+            margin-top: 5px;
             border-radius: 4px;
-            border: 1px solid #E0E0E0;
+            border: 1px solid #BDBDBD;
+            box-sizing: border-box;
             resize: vertical;
         }
+        .action-buttons {
+            margin-top: 10px;
+        }
         #output, #previewArea {
-            width: 100%;
-            background-color: #fff;
-            border: 1px solid #ccc;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            border-radius: 4px;
-            padding: 10px;
-            margin-top: 20px;
             display: none; /* Initially hidden */
+            width: 100%;
+            margin-top: 20px;
+            background-color: #FFFFFF;
+            border: 1px solid #BDBDBD;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 15px;
+            border-radius: 4px;
+            resize: vertical;
             overflow: auto;
         }
     </style>
 </head>
 <body>
 
-<h2 class="title">Interactive Decision Tree Builder</h2>
-<div id="builder"></div>
-<button onclick="addQuestion('builder', 1, '')">Add Main Question</button>
-<button onclick="generateCode()">Generate Code</button>
-<button onclick="togglePreview()">Toggle Preview</button>
-<textarea id="output"></textarea>
+<h2>Interactive Decision Tree Builder</h2>
+<div id="builder" class="container"></div>
+<div class="action-buttons">
+    <button onclick="addQuestion('builder', 0, '')">Add Main Question</button>
+    <button onclick="generateCode()">Generate Code</button>
+    <button onclick="togglePreview()">Toggle Preview</button>
+    <button onclick="undoAction()">Undo</button>
+</div>
+<textarea id="output" placeholder="Generated code will appear here..."></textarea>
 <div id="previewArea"></div>
 
 <script>
 let questionCounter = 0;
+let actions = [];
 
 function addQuestion(parentId, level, path) {
-    questionCounter++;
-    const questionId = `q${questionCounter}`;
+    const id = ++questionCounter;
+    const questionPath = `${path}${id}.`;
     const container = document.createElement('div');
-    container.className = 'question-block';
+    container.className = level === 0 ? 'container' : 'nested-container';
     container.innerHTML = `
-        <textarea placeholder="Question ${path}${questionCounter}"></textarea>
-        <div id="answers-${questionId}"></div>
+        <label>Question ${questionPath}</label>
+        <textarea placeholder="Enter your question here..."></textarea>
+        <div class="answers"></div>
+        ${level < 5 ? `<button onclick="addAnswer('${id}', ${level}, '${questionPath}')">Add Answer</button>` : ''}
     `;
     document.getElementById(parentId).appendChild(container);
-
-    if (level < 5) {
-        addAnswerOption(`answers-${questionId}`, level, path + questionCounter + '.');
-    }
+    saveAction();
 }
 
-function addAnswerOption(parentId, level, path) {
-    const answerId = `answer-${questionCounter}`;
+function addAnswer(questionId, level, path) {
     const container = document.createElement('div');
-    container.innerHTML = `<textarea placeholder="Answer ${path}"></textarea>
-    <button onclick="addNestedQuestion('${parentId}', ${level + 1}, '${path}')">Add Nested Question</button>`;
-    document.getElementById(parentId).appendChild(container);
-}
-
-function addNestedQuestion(parentId, level, path) {
-    addQuestion(parentId, level, path);
+    container.className = 'answer';
+    container.innerHTML = `
+        <label>Answer to Q${path}</label>
+        <textarea placeholder="Enter your answer here..."></textarea>
+        <button onclick="addQuestion('q${questionId}', ${level + 1}, '${path}')">Add Nested Question</button>
+    `;
+    document.querySelector(`#q${questionId} .answers`).appendChild(container);
+    saveAction();
 }
 
 function generateCode() {
-    let code = document.getElementById('builder').innerHTML;
-    // Simple string replacement to remove buttons from HTML output
-    code = code.replace(/<button[^>]*>(.*?)<\/button>/g, '');
-    document.getElementById('output').value = code;
-    togglePreview(true); // Force showing the preview
+    const builder = document.getElementById('builder').cloneNode(true);
+    Array.from(builder.querySelectorAll('button')).forEach(btn => btn.remove());
+    Array.from(builder.querySelectorAll('textarea')).forEach((textarea, index) => {
+        const div = document.createElement('div');
+        div.style.display = 'none';
+        div.id = `answer-content-${index}`;
+        div.innerHTML = `<p>${textarea.value}</p>`;
+        textarea.parentNode.insertBefore(div, textarea.nextSibling);
+        textarea.outerHTML = `<label><input type="radio" name="q${index}" onclick="document.getElementById('answer-content-${index}').style.display='block';">${textarea.value}</label>`;
+    });
+    document.getElementById('output').value = builder.innerHTML;
+    document.getElementById('previewArea').innerHTML = builder.innerHTML;
 }
 
-function togglePreview(forceShow = false) {
+function togglePreview() {
     const preview = document.getElementById('previewArea');
-    const output = document.getElementById('output').value;
-    if (forceShow || preview.style.display === 'none') {
+    const output = document.getElementById('output');
+    if (preview.style.display === 'none') {
         preview.style.display = 'block';
-        preview.innerHTML = output;
+        output.style.display = 'block';
     } else {
         preview.style.display = 'none';
+        output.style.display = 'none';
+    }
+}
+
+function saveAction() {
+    const currentContent = document.getElementById('builder').innerHTML;
+    actions.push(currentContent);
+}
+
+function undoAction() {
+    if (actions.length > 1) {
+        actions.pop();
+        const lastState = actions[actions.length - 1];
+        document.getElementById('builder').innerHTML = lastState;
     }
 }
 </script>
