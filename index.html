@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Decision Tree Builder with Functional Buttons</title>
+    <title>Interactive Decision Tree Builder</title>
     <style>
         body {
             font-family: 'Roboto', sans-serif;
@@ -30,7 +30,6 @@
             cursor: pointer;
             font-size: 14px;
             margin-top: 10px;
-            display: inline-block;
         }
         button:hover {
             background-color: #7B1FA2;
@@ -84,41 +83,49 @@ function addQuestion(parentId, level, path) {
         <div class="answers" id="answers-${questionId}"></div>
     `;
     document.getElementById(parentId).appendChild(container);
-    // Add answer button directly to question container for clearer scope handling
-    const answerBtn = document.createElement('button');
-    answerBtn.textContent = 'Add Answer';
-    answerBtn.onclick = () => addAnswer(questionId, level, path);
-    container.appendChild(answerBtn);
+
+    if (level < 5) {
+        const addAnswerBtn = document.createElement('button');
+        addAnswerBtn.textContent = 'Add Answer';
+        addAnswerBtn.onclick = () => addAnswer(questionId, level, path);
+        container.appendChild(addAnswerBtn);
+    }
+
     saveAction();
 }
 
 function addAnswer(questionId, level, path) {
+    const answersContainer = document.getElementById(`answers-${questionId}`);
+    const answerId = `a${questionCounter}`;
     const answerContainer = document.createElement('div');
     answerContainer.className = 'answer';
     const answerPath = `${path}${questionCounter}.`;
-    answerContainer.innerHTML = `<textarea placeholder="Answer to Q${answerPath}"></textarea>`;
-    document.getElementById(`answers-${questionId}`).appendChild(answerContainer);
-    if (level < 4) { // Adjust to allow nesting up to 5 levels deep
-        const nestedBtn = document.createElement('button');
-        nestedBtn.textContent = 'Add Nested Question';
-        nestedBtn.onclick = () => addQuestion(`answers-${questionId}`, level + 1, `${answerPath}`);
-        answerContainer.appendChild(nestedBtn);
+    answerContainer.innerHTML = `<textarea placeholder="Answer ${answerPath}"></textarea>`;
+    answersContainer.appendChild(answerContainer);
+
+    if (level < 4) {
+        const addNestedQuestionBtn = document.createElement('button');
+        addNestedQuestionBtn.textContent = 'Add Nested Question';
+        addNestedQuestionBtn.onclick = () => addQuestion(`answers-${questionId}`, level + 1, `${answerPath}`);
+        answerContainer.appendChild(addNestedQuestionBtn);
     }
+
     saveAction();
 }
 
 function generateCode() {
     const builder = document.getElementById('builder').cloneNode(true);
-    Array.from(builder.querySelectorAll('button')).forEach(btn => btn.remove()); // Remove buttons
-    // Replace textareas with static text for preview and generated code
+    Array.from(builder.querySelectorAll('button')).forEach(btn => btn.remove());
     Array.from(builder.querySelectorAll('textarea')).forEach((textarea, index) => {
         const text = document.createTextNode(textarea.value);
         textarea.parentNode.replaceChild(text, textarea);
     });
     const htmlCode = builder.innerHTML;
-    document.getElementById('output').value = htmlCode; // Set generated HTML code in textarea
-    document.getElementById('previewArea').innerHTML = htmlCode; // Also set in preview area
-    togglePreview(true); // Automatically show preview
+    // Modify the HTML code to include radio buttons and hidden content
+    const modifiedCode = htmlCode.replace(/<textarea/g, '<input type="radio"').replace(/<\/textarea/g, '</label><div style="display: none">').replace(/<div style="display: none">/g, '<div style="display: none">');
+    document.getElementById('output').value = modifiedCode;
+    document.getElementById('previewArea').innerHTML = modifiedCode;
+    togglePreview(true);
 }
 
 function togglePreview(forceShow = false) {
@@ -136,7 +143,7 @@ function saveAction() {
 
 function undoAction() {
     if (actions.length > 1) {
-        actions.pop(); // Remove last action
+        actions.pop();
         const lastState = actions[actions.length - 1];
         document.getElementById('builder').innerHTML = lastState;
     }
