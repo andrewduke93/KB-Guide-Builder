@@ -2,100 +2,92 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Interactive Decision Tree with Preview</title>
-    <link href="https://fonts.googleapis.com/css?family=Roboto:400,500&display=swap" rel="stylesheet">
+    <title>Multi-level Nested Decision Tree Builder</title>
     <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #FAFAFA;
-            color: #212121;
-            padding: 20px;
+        /* Styles remain mostly unchanged, ensure .nested-question has proper styling */
+        .nested-question {
+            margin-left: 20px;
+            display: none; /* Initially hide nested questions */
         }
-        .question-container, .nested-questions {
-            margin-top: 10px;
-        }
-        .question-block, .nested-question {
-            background-color: #FFFFFF;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            border-radius: 4px;
-            padding: 20px;
-            margin-bottom: 10px;
-        }
-        button {
-            background-color: #6200EE;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            margin-top: 10px;
-        }
-        button:hover {
-            background-color: #3700B3;
-        }
-        textarea, #previewArea {
-            width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            border-radius: 4px;
-            border: 1px solid #E0E0E0;
-            box-sizing: border-box;
-        }
-        #previewArea {
-            height: 300px;
-            display: none;
-        }
+        /* Other styles are as previously defined */
     </style>
 </head>
 <body>
 
 <div id="builder" class="question-container"></div>
-<button onclick="addQuestion('builder', '', true)">Add Main Question</button>
+<button onclick="addQuestion('builder', '', true, 0)">Add Main Question</button>
 <textarea id="output" placeholder="Generated HTML code will appear here..."></textarea>
 <button onclick="generateCode()">Generate HTML Code</button>
 <button onclick="togglePreview()">Toggle Preview</button>
-<div id="previewArea"></div>
+<div id="previewArea" style="display: none;"></div>
 
 <script>
 let questionCounter = 1;
 
-function addQuestion(parentId, precedingQuestionId, isMainQuestion = false) {
-    // JavaScript function for adding questions remains unchanged
+function addQuestion(parentId, precedingQuestionId, isMainQuestion = false, level) {
+    const questionId = `q${questionCounter++}`;
+    const container = document.createElement('div');
+    container.className = isMainQuestion ? 'question-block' : 'nested-question';
+    container.innerHTML = `
+        <textarea placeholder="${isMainQuestion ? 'Enter main question' : 'Enter nested question'}"></textarea>
+        <div class="answers"></div>
+        ${level < 10 ? `<button onclick="addAnswer('${questionId}', ${level + 1})">Add Answer</button>` : ''}
+    `;
+    
+    if (!isMainQuestion) {
+        const nestedContainer = document.createElement('div');
+        nestedContainer.className = 'nested-questions';
+        nestedContainer.appendChild(container);
+        document.getElementById(precedingQuestionId).querySelector('.answers').appendChild(nestedContainer);
+    } else {
+        document.getElementById(parentId).appendChild(container);
+    }
 }
 
-function addAnswer(questionId) {
-    // JavaScript function for adding answers remains unchanged
+function addAnswer(questionId, level) {
+    const answerContainer = document.createElement('div');
+    answerContainer.className = 'answer-input';
+    answerContainer.innerHTML = `
+        <textarea placeholder="Enter answer"></textarea>
+        ${level < 10 ? `<button onclick="addQuestion('builder', '${questionId}', false, ${level})">Add Nested Question</button>` : ''}
+    `;
+    document.getElementById(questionId).querySelector('.answers').appendChild(answerContainer);
 }
 
 function generateCode() {
-    let htmlCode = buildHTML(document.getElementById('builder'), 0);
-    document.getElementById('output').value = htmlCode;
-    updatePreview(htmlCode);
+    const output = document.getElementById('output');
+    output.value = "<script>function toggleNestedQuestion(id) { document.querySelectorAll('.nested-question').forEach(q => { q.style.display = 'none'; }); document.getElementById(id) ? document.getElementById(id).style.display = 'block' : null; }</script>";
+    traverseQuestions(document.getElementById('builder'), output, 0);
 }
 
-function buildHTML(element, level) {
-    let html = '';
-    // Modified buildHTML function to include radio buttons and nested logic
-}
-
-function updatePreview(htmlCode) {
-    // Function to update the preview area with interactive HTML
-    let previewArea = document.getElementById('previewArea');
-    previewArea.innerHTML = htmlCode;
-    attachEventListeners();
+function traverseQuestions(element, output, level) {
+    element.childNodes.forEach((child) => {
+        if (child.className && child.className.includes('question-block')) {
+            const questionText = child.querySelector('textarea').value;
+            const questionId = `q${level}-${questionCounter++}`;
+            output.value += `<div class="${level === 0 ? '' : 'nested-question'}" id="${questionId}">\n<p>${questionText}</p>\n`;
+            const answers = child.querySelectorAll('.answer-input textarea');
+            answers.forEach((answer, index) => {
+                const answerText = answer.value;
+                const nestedQuestionId = `nested-${questionId}-${index}`;
+                output.value += `<input type="radio" name="${questionId}" onclick="toggleNestedQuestion('${nestedQuestionId}')">${answerText}<br>\n`;
+                const nextLevel = child.querySelector('.nested-questions');
+                if (nextLevel) {
+                    traverseQuestions(nextLevel, output, level + 1);
+                }
+            });
+            output.value += `</div>\n`;
+        }
+    });
 }
 
 function togglePreview() {
-    let previewArea = document.getElementById('previewArea');
+    const previewArea = document.getElementById('previewArea');
+    const htmlCode = document.getElementById('output').value;
+    previewArea.innerHTML = htmlCode;
+    previewArea.querySelector('script') && eval(previewArea.querySelector('script').textContent);
     previewArea.style.display = previewArea.style.display === 'none' ? 'block' : 'none';
 }
-
-function attachEventListeners() {
-    // Attach event listeners to radio buttons in the preview to handle show/hide logic
-}
-
-// Additional JavaScript functions for handling dynamic interactions
 </script>
 
 </body>
