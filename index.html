@@ -2,19 +2,20 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Interactive Decision Tree Builder</title>
+    <title>Decision Tree Builder with Functional Buttons</title>
     <style>
         body {
             font-family: 'Roboto', sans-serif;
             background-color: #FAFAFA;
+            color: #212121;
             padding: 20px;
         }
         .container, .nested-container {
-            margin-bottom: 20px;
-            padding: 15px;
-            background-color: #fff;
+            background-color: #FFFFFF;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 15px;
+            margin-bottom: 10px;
         }
         .nested-container {
             margin-left: 20px;
@@ -24,9 +25,10 @@
             background-color: #6200EE;
             color: #FFFFFF;
             border: none;
+            padding: 8px 16px;
             border-radius: 4px;
-            padding: 10px;
             cursor: pointer;
+            font-size: 14px;
             margin-top: 10px;
             display: inline-block;
         }
@@ -39,20 +41,16 @@
             margin-top: 5px;
             border-radius: 4px;
             border: 1px solid #BDBDBD;
-            box-sizing: border-box;
             resize: vertical;
-        }
-        .action-buttons {
-            margin-top: 10px;
         }
         #output, #previewArea {
             display: none; /* Initially hidden */
             width: 100%;
-            margin-top: 20px;
             background-color: #FFFFFF;
             border: 1px solid #BDBDBD;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             padding: 15px;
+            margin-top: 20px;
             border-radius: 4px;
             resize: vertical;
             overflow: auto;
@@ -77,57 +75,58 @@ let questionCounter = 0;
 let actions = [];
 
 function addQuestion(parentId, level, path) {
-    const id = ++questionCounter;
-    const questionPath = `${path}${id}.`;
+    const questionId = `q${++questionCounter}`;
     const container = document.createElement('div');
     container.className = level === 0 ? 'container' : 'nested-container';
+    container.id = questionId;
     container.innerHTML = `
-        <label>Question ${questionPath}</label>
-        <textarea placeholder="Enter your question here..."></textarea>
-        <div class="answers"></div>
-        ${level < 5 ? `<button onclick="addAnswer('${id}', ${level}, '${questionPath}')">Add Answer</button>` : ''}
+        <textarea placeholder="Question ${path}${questionCounter}"></textarea>
+        <div class="answers" id="answers-${questionId}"></div>
     `;
     document.getElementById(parentId).appendChild(container);
+    // Add answer button directly to question container for clearer scope handling
+    const answerBtn = document.createElement('button');
+    answerBtn.textContent = 'Add Answer';
+    answerBtn.onclick = () => addAnswer(questionId, level, path);
+    container.appendChild(answerBtn);
     saveAction();
 }
 
 function addAnswer(questionId, level, path) {
-    const container = document.createElement('div');
-    container.className = 'answer';
-    container.innerHTML = `
-        <label>Answer to Q${path}</label>
-        <textarea placeholder="Enter your answer here..."></textarea>
-        <button onclick="addQuestion('q${questionId}', ${level + 1}, '${path}')">Add Nested Question</button>
-    `;
-    document.querySelector(`#q${questionId} .answers`).appendChild(container);
+    const answerContainer = document.createElement('div');
+    answerContainer.className = 'answer';
+    const answerPath = `${path}${questionCounter}.`;
+    answerContainer.innerHTML = `<textarea placeholder="Answer to Q${answerPath}"></textarea>`;
+    document.getElementById(`answers-${questionId}`).appendChild(answerContainer);
+    if (level < 4) { // Adjust to allow nesting up to 5 levels deep
+        const nestedBtn = document.createElement('button');
+        nestedBtn.textContent = 'Add Nested Question';
+        nestedBtn.onclick = () => addQuestion(`answers-${questionId}`, level + 1, `${answerPath}`);
+        answerContainer.appendChild(nestedBtn);
+    }
     saveAction();
 }
 
 function generateCode() {
     const builder = document.getElementById('builder').cloneNode(true);
-    Array.from(builder.querySelectorAll('button')).forEach(btn => btn.remove());
+    Array.from(builder.querySelectorAll('button')).forEach(btn => btn.remove()); // Remove buttons
+    // Replace textareas with static text for preview and generated code
     Array.from(builder.querySelectorAll('textarea')).forEach((textarea, index) => {
-        const div = document.createElement('div');
-        div.style.display = 'none';
-        div.id = `answer-content-${index}`;
-        div.innerHTML = `<p>${textarea.value}</p>`;
-        textarea.parentNode.insertBefore(div, textarea.nextSibling);
-        textarea.outerHTML = `<label><input type="radio" name="q${index}" onclick="document.getElementById('answer-content-${index}').style.display='block';">${textarea.value}</label>`;
+        const text = document.createTextNode(textarea.value);
+        textarea.parentNode.replaceChild(text, textarea);
     });
-    document.getElementById('output').value = builder.innerHTML;
-    document.getElementById('previewArea').innerHTML = builder.innerHTML;
+    const htmlCode = builder.innerHTML;
+    document.getElementById('output').value = htmlCode; // Set generated HTML code in textarea
+    document.getElementById('previewArea').innerHTML = htmlCode; // Also set in preview area
+    togglePreview(true); // Automatically show preview
 }
 
-function togglePreview() {
-    const preview = document.getElementById('previewArea');
-    const output = document.getElementById('output');
-    if (preview.style.display === 'none') {
-        preview.style.display = 'block';
-        output.style.display = 'block';
-    } else {
-        preview.style.display = 'none';
-        output.style.display = 'none';
-    }
+function togglePreview(forceShow = false) {
+    const previewArea = document.getElementById('previewArea');
+    const outputArea = document.getElementById('output');
+    const shouldShow = forceShow || previewArea.style.display === 'none';
+    previewArea.style.display = shouldShow ? 'block' : 'none';
+    outputArea.style.display = shouldShow ? 'block' : 'none';
 }
 
 function saveAction() {
@@ -137,7 +136,7 @@ function saveAction() {
 
 function undoAction() {
     if (actions.length > 1) {
-        actions.pop();
+        actions.pop(); // Remove last action
         const lastState = actions[actions.length - 1];
         document.getElementById('builder').innerHTML = lastState;
     }
