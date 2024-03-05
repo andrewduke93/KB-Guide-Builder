@@ -10,7 +10,7 @@
 </head>
 <body>
 
-<h2>Interactive Decision Tree Builder v1</h2>
+<h2>Interactive Decision Tree Builder</h2>
 <div id="builder" class="container" contenteditable="true">
     <div class="instructions">Click "Add Main Question" to start building your decision tree.</div>
 </div>
@@ -63,7 +63,7 @@ function addAnswer(questionId, level, path) {
 
     if (level < 4) {
         const addNestedQuestionBtn = document.createElement('button');
-        addNestedQuestionBtn.textContent = 'Add Nested Question';
+        addNestedQuestionBtn.textContent = `Add Nested Question for Answer ${answerPath}`;
         addNestedQuestionBtn.onclick = () => addQuestion(`nested-${answerId}`, level + 1, `${answerPath}`);
         answerContainer.appendChild(addNestedQuestionBtn);
     }
