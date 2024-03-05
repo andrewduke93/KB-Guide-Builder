@@ -43,7 +43,6 @@
             resize: vertical;
         }
         #output, #previewArea {
-            display: none;
             width: 100%;
             background-color: #FFFFFF;
             border: 1px solid #BDBDBD;
@@ -54,6 +53,9 @@
             resize: vertical;
             overflow: auto;
         }
+        #output {
+            display: none;
+        }
         .hidden {
             display: none;
         }
@@ -62,7 +64,7 @@
 <body>
 
 <h2>Interactive Decision Tree Builder</h2>
-<div id="builder" class="container"></div>
+<div id="builder" class="container" contenteditable="true"></div>
 <div class="action-buttons">
     <button onclick="addQuestion('builder', 0, '')">Add Main Question</button>
     <button onclick="generateCode()">Generate Code</button>
@@ -139,7 +141,7 @@ function togglePreview(forceShow = false) {
     const outputArea = document.getElementById('output');
     const shouldShow = forceShow || previewArea.style.display === 'none';
     previewArea.style.display = shouldShow ? 'block' : 'none';
-    outputArea.style.display = shouldShow ? 'block' : 'none';
+    outputArea.style.display = shouldShow ? 'none' : 'block';
 }
 
 function saveAction() {
