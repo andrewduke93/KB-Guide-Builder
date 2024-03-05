@@ -3,37 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Decision Tree Preview</title>
+    <title>Decision Tree Builder</title>
     <style>
         /* Add your CSS styles here */
         body {
             font-family: Arial, sans-serif;
             background-color: #f9f9f9;
             margin: 0;
-            padding: 0;
+            padding: 20px;
         }
 
         h2 {
-            margin: 20px 0;
+            margin-bottom: 20px;
         }
 
         .question-container {
             margin-bottom: 20px;
         }
 
-        .nested-question-container {
-            margin-left: 20px;
-            border-left: 2px solid #007bff;
-            padding-left: 10px;
-            display: none; /* Hide nested questions by default */
-        }
-
-        input[type="radio"] {
-            margin-right: 5px;
-        }
-
-        label {
-            margin-right: 15px;
+        input[type="text"] {
+            margin-bottom: 10px;
+            padding: 5px;
+            width: 300px;
         }
 
         button {
@@ -45,111 +36,62 @@
             border: none;
             border-radius: 5px;
         }
+
+        .answer-container {
+            margin-left: 20px;
+        }
     </style>
 </head>
 <body>
-    <h2>Decision Tree Preview</h2>
+    <h2>Decision Tree Builder</h2>
     
-    <!-- Main container for the decision tree preview -->
-    <div id="preview">
-        <!-- Question 1 -->
-        <div class="question-container">
-            <p>Question 1</p>
-            <input type="radio" name="question1" value="choice1" onclick="showNestedQuestions('nested-question1-choice1')">
-            <label>Choice 1</label>
-            <input type="radio" name="question1" value="choice2" onclick="showNestedQuestions('nested-question1-choice2')">
-            <label>Choice 2</label>
-            <input type="radio" name="question1" value="choice3" onclick="showNestedQuestions('nested-question1-choice3')">
-            <label>Choice 3</label>
-            <button onclick="addAnswer('question1')">Add Answer</button>
-            <button onclick="addNestedQuestion('nested-question1-choice1')">Add Nested Question</button>
-            <!-- Hidden section for nested questions -->
-            <div class="nested-question-container" id="nested-question1-choice1">
-                <p>Nested Question for Choice 1</p>
-                <input type="radio" name="nested-question1-choice1" value="nested-choice1-1">
-                <label>Nested Choice 1</label>
-                <input type="radio" name="nested-question1-choice1" value="nested-choice1-2">
-                <label>Nested Choice 2</label>
-                <!-- Additional nested choices -->
-            </div>
-            <div class="nested-question-container" id="nested-question1-choice2">
-                <p>Nested Question for Choice 2</p>
-                <!-- Additional nested questions for choice 2 -->
-            </div>
-            <div class="nested-question-container" id="nested-question1-choice3">
-                <p>Nested Question for Choice 3</p>
-                <!-- Additional nested questions for choice 3 -->
-            </div>
-            <!-- Additional hidden sections for other choices -->
-        </div>
-        <!-- Additional questions -->
+    <!-- Main container for the decision tree builder -->
+    <div id="builder">
+        <!-- Button to add a new main question -->
+        <button onclick="addMainQuestion()">Add Main Question</button>
     </div>
 
     <script>
-        function showNestedQuestions(nestedQuestionId) {
-            // Hide all nested questions
-            const nestedQuestions = document.querySelectorAll('.nested-question-container');
-            nestedQuestions.forEach(question => {
-                question.style.display = 'none';
-            });
+        function addMainQuestion() {
+            const builder = document.getElementById('builder');
 
-            // Show the selected nested question
-            const selectedQuestion = document.getElementById(nestedQuestionId);
-            selectedQuestion.style.display = 'block';
-        }
+            // Create a new main question container
+            const newQuestionContainer = document.createElement('div');
+            newQuestionContainer.className = 'question-container';
 
-        function addAnswer(questionId) {
-            // Get the question container
-            const questionContainer = document.querySelector(`#${questionId}`);
+            // Create a new question input
+            const newQuestionInput = document.createElement('input');
+            newQuestionInput.type = 'text';
+            newQuestionInput.placeholder = 'Enter your question';
 
-            // Create a new radio button for the answer
-            const newRadioButton = document.createElement('input');
-            newRadioButton.type = 'radio';
-            newRadioButton.name = questionId;
-            newRadioButton.value = `choice${questionContainer.children.length + 1}`;
-            newRadioButton.onclick = function() {
-                showNestedQuestions(`nested-${questionId}-${newRadioButton.value}`);
+            // Create a button to add answer choices
+            const addAnswerButton = document.createElement('button');
+            addAnswerButton.textContent = 'Add Answer';
+            addAnswerButton.onclick = function() {
+                addAnswer(newQuestionContainer);
             };
 
-            // Create a new label for the answer
-            const newLabel = document.createElement('label');
-            newLabel.textContent = `Choice ${questionContainer.children.length + 1}`;
+            // Create a container for answers
+            const answerContainer = document.createElement('div');
+            answerContainer.className = 'answer-container';
 
-            // Add the new radio button and label to the question container
-            questionContainer.appendChild(newRadioButton);
-            questionContainer.appendChild(newLabel);
+            // Append the question input and add answer button to the question container
+            newQuestionContainer.appendChild(newQuestionInput);
+            newQuestionContainer.appendChild(addAnswerButton);
+            newQuestionContainer.appendChild(answerContainer);
+
+            // Append the new question container to the builder
+            builder.appendChild(newQuestionContainer);
         }
 
-        function addNestedQuestion(parentId) {
-            // Get the parent nested question container
-            const parentContainer = document.querySelector(`#${parentId}`);
+        function addAnswer(questionContainer) {
+            // Create a new answer input
+            const newAnswerInput = document.createElement('input');
+            newAnswerInput.type = 'text';
+            newAnswerInput.placeholder = 'Enter answer choice';
 
-            // Create a new nested question container
-            const newNestedContainer = document.createElement('div');
-            newNestedContainer.className = 'nested-question-container';
-            newNestedContainer.id = `nested-${parentId}-nested${parentContainer.children.length + 1}`;
-
-            // Create a new paragraph for the nested question
-            const newParagraph = document.createElement('p');
-            newParagraph.textContent = `Nested Question for ${parentId}`;
-
-            // Create a new radio button for the nested answer
-            const newRadioButton = document.createElement('input');
-            newRadioButton.type = 'radio';
-            newRadioButton.name = parentId;
-            newRadioButton.value = `nested${parentContainer.children.length + 1}`;
-
-            // Create a new label for the nested answer
-            const newLabel = document.createElement('label');
-            newLabel.textContent = `Nested Choice ${parentContainer.children.length + 1}`;
-
-            // Add the new elements to the nested question container
-            newNestedContainer.appendChild(newParagraph);
-            newNestedContainer.appendChild(newRadioButton);
-            newNestedContainer.appendChild(newLabel);
-
-            // Add the new nested question container to the parent
-            parentContainer.appendChild(newNestedContainer);
+            // Append the new answer input to the answer container
+            questionContainer.querySelector('.answer-container').appendChild(newAnswerInput);
         }
     </script>
 </body>
